@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>光影粒子网页</title>
+    <style>
+        /* 清除浏览器默认边距，强制全屏 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 背景层：两张图拼接 */
+        #background-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            display: flex;
+        }
+
+        .bg-half {
+            flex: 1; /* 各占一半 */
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* 左右两侧对应图片文件名，确保这里和你保存的图片名字一致！ */
+        .bg-left {
+            background-image: url('bg1.jpg');
+        }
+        .bg-right {
+            background-image: url('bg2.jpg');
+        }
+
+        /* 粒子层：覆盖在图片上方 */
+        #canvas-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none; /* 让粒子像空气一样，不阻挡鼠标操作 */
+        }
+
+        /* 手机端适配：上下拼接 */
+        @media (max-width: 600px) {
+            #background-layer {
+                flex-direction: column;
+            }
+            .bg-half {
+                flex: none;
+                height: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 背景图片区域 -->
+    <div id="background-layer">
+        <div class="bg-half bg-left"></div>
+        <div class="bg-half bg-right"></div>
+    </div>
+
+    <!-- 粒子画布 -->
+    <canvas id="canvas-layer"></canvas>
+
+    <script>
+        // --- 粒子引擎核心逻辑 ---
+        const canvas = document.getElementById('canvas-layer');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        const particleCount = 220; // 粒子数量，想密一些调大这个数值
+
+        // 初始化画布尺寸
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            createParticles();
+        }
+
+        // 粒子对象类
+        class Particle {
+            constructor() {
+                // 随机位置
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                
+                // 粒子大小：模拟光尘，有大有小
+                this.size = Math.random() * 4 + 1; 
+                this.baseOpacity = Math.random() * 0.6 + 0.2;
+                
+                // 漂浮速度，极其缓慢
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                
+                // 呼吸闪烁参数
+                this.twinkleSpeed = Math.random() * 0.02 + 0.01;
+                this.phase = Math.random() * Math.PI * 2;
+            }
+
+            // 更新粒子位置和透明度
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 碰到边缘反弹
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+
+                this.phase += this.twinkleSpeed;
+                // 透明度在基础透明度上下浮动，产生闪烁感
+                return this.baseOpacity * (0.6 + 0.4 * Math.sin(this.phase));
+            }
+
+            // 绘制具有光感的粒子
+            draw(currentOpacity) {
+                // 设定光感颜色：暖金/橘白（完美适配两张图的色调）
+                const colorR = 255;
+                const colorG = 200 + Math.random() * 40; 
+                const colorB = 120 + Math.random() * 40;
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                
+                // 1. 绘制粒子本体（柔和）
+                ctx.fillStyle = `rgba(${colorR}, ${colorG}, ${colorB}, ${currentOpacity * 0.8})`;
+                ctx.fill();
+
+                // 2. 增加高光发光晕，模拟镜头光晕效果
+                ctx.shadowColor = `rgba(255, 180, 100, ${currentOpacity * 0.4})`;
+                ctx.shadowBlur = 30; 
+                
+                // 再次绘制一次，利用阴影产生发光
+                ctx.fill();
+                
+                // 重置阴影，避免影响到下一个粒子的绘制
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // 初始化所有粒子
+        function createParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        // 粒子之间的连线（生成光网效果）
+        function connectParticles() {
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    let dx = particles[a].x - particles[b].x;
+                    let dy = particles[a].y - particles[b].y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // 距离小于120像素时连线
+                    if (distance < 120) {
+                        let opacityValue = 1 - (distance / 120);
+                        // 连线也是金色的
+                        ctx.strokeStyle = `rgba(255, 200, 100, ${opacityValue * 0.15})`;
+                        ctx.lineWidth = 1.2;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // 动画主循环（每秒60帧）
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < particles.length; i++) {
+                let currentOpacity = particles[i].update();
+                particles[i].draw(currentOpacity);
+            }
+
+            connectParticles(); // 绘制光网
+            requestAnimationFrame(animate); // 循环调用
+        }
+
+        // 监听浏览器窗口大小变化，自适应
+        window.addEventListener('resize', () => {
+            initCanvas();
+        });
+
+        // 启动一切
+        initCanvas();
+        animate();
+    </script>
+</body>
+</html>
