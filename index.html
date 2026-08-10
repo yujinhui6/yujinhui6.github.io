@@ -1,945 +1,271 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0e1a">
-  <title>于锦辉 · 科幻光感简历</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#0a0e1a;--bg-card:rgba(17,24,39,0.72);--bg-card-2:rgba(26,35,50,0.65);--text:#e8edf5;--text-secondary:#94a3b8;--text-muted:#64748b;--border:rgba(30,58,95,0.5);--primary:#00d4ff;--primary-dim:rgba(0,212,255,0.12);--primary-dark:#0099cc;--primary-glow:rgba(0,212,255,0.35);--shadow:0 4px 30px rgba(0,212,255,0.06),0 1px 8px rgba(0,0,0,0.4);--shadow-hover:0 12px 40px rgba(0,212,255,0.15),0 4px 16px rgba(0,0,0,0.5);--radius:12px;--transition:0.3s cubic-bezier(0.4,0,0.2,1);--font:-apple-system,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;--max-width:1000px;--nav-height:56px;--touch-target:44px}
-    [data-theme="light"]{--bg:#e8edf5;--bg-card:rgba(255,255,255,0.78);--bg-card-2:rgba(240,244,250,0.72);--text:#0a1628;--text-secondary:#1a2a4a;--text-muted:#5a6a8a;--border:rgba(176,200,224,0.5);--primary:#0066cc;--primary-dim:rgba(0,102,204,0.10);--primary-dark:#004d99;--primary-glow:rgba(0,102,204,0.20);--shadow:0 4px 20px rgba(0,0,0,0.04),0 1px 4px rgba(0,0,0,0.02);--shadow-hover:0 12px 32px rgba(0,102,204,0.10),0 4px 12px rgba(0,0,0,0.04)}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>光影粒子网页 · 可下载</title>
+    <style>
+        /* 清除浏览器默认边距，强制全屏 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-    /* ===== 动态光感壁纸背景 ===== */
-    #lightBg{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;background:var(--bg);transition:background .4s;overflow:hidden}
-    #lightBg canvas{display:block;width:100%;height:100%}
+        /* 背景层：两张图拼接 */
+        #background-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            display: flex;
+        }
 
-    /* ===== 光感装饰 ===== */
-    .glow-ring{position:absolute;border-radius:50%;background:radial-gradient(circle,var(--primary-glow)0%,transparent 70%);pointer-events:none;opacity:0;transition:opacity 1s ease}
-    .glow-ring.visible{opacity:0.6}
+        .bg-half {
+            flex: 1; /* 各占一半 */
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
 
-    .hero::before{content:'';position:absolute;top:-50%;right:-30%;width:500px;height:500px;background:radial-gradient(circle,var(--primary-glow)0%,transparent 70%);opacity:0.15;pointer-events:none;animation:pulse-glow 4s ease-in-out infinite}
-    @keyframes pulse-glow{0%,100%{opacity:0.10;transform:scale(1)}50%{opacity:0.25;transform:scale(1.1)}}
+        /* 左右两侧对应图片文件名，确保这里和你保存的图片名字一致！ */
+        .bg-left {
+            background-image: url('bg1.jpg');
+        }
+        .bg-right {
+            background-image: url('bg2.jpg');
+        }
 
-    .section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--primary),var(--primary),transparent);opacity:.4;box-shadow:0 0 20px var(--primary-glow)}
+        /* 粒子层：覆盖在图片上方 */
+        #canvas-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none; /* 让粒子像空气一样，不阻挡鼠标操作 */
+        }
 
-    .section::after{content:'✦';position:absolute;right:16px;top:12px;font-size:1.2rem;opacity:0.08;color:var(--primary);animation:spin-glow 20s linear infinite}
-    @keyframes spin-glow{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+        /* ======= 新增：下载按钮样式 ======= */
+        #download-wrapper {
+            position: fixed;
+            top: 30px;
+            right: 20px;
+            z-index: 999;
+            pointer-events: auto; /* 允许点击 */
+        }
+        #download-btn {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #ffdd99;
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 200, 100, 0.4);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+        #download-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 180, 100, 0.2);
+            border-color: #ffa500;
+        }
 
-    /* ===== 毛玻璃增强光感 ===== */
-    .navbar,.hero,.section,.city-profile,.custom-photo-card,.photo-preview,.custom-photo-box,.highlight-card,.project-card,.exp-item,.interest-item,.badge,.hero-badge-item,.photo-upload-btn,.icon-btn{
-      backdrop-filter:blur(20px) saturate(1.4);
-      -webkit-backdrop-filter:blur(20px) saturate(1.4);
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      box-shadow:var(--shadow);
-      transition:all var(--transition);
-    }
-
-    .navbar:hover,.hero:hover,.section:hover{border-color:var(--primary);box-shadow:0 0 40px var(--primary-glow),var(--shadow)}
-
-    /* ===== 光感卡片悬停 ===== */
-    .highlight-card:hover,.project-card:hover,.custom-photo-card:hover,.city-profile:hover{
-      border-color:var(--primary);
-      box-shadow:0 0 50px var(--primary-glow),var(--shadow-hover);
-      transform:translateY(-4px) scale(1.01)
-    }
-
-    .highlight-card::after{content:'◆';position:absolute;right:-2px;bottom:-6px;font-size:2.2rem;opacity:.04;color:var(--primary)}
-
-    /* ===== 光感文字 ===== */
-    .glow-text{color:var(--primary);text-shadow:0 0 30px var(--primary-glow)}
-    .nav-name span{color:var(--primary);text-shadow:0 0 20px var(--primary-glow)}
-
-    /* ===== 光晕按钮 ===== */
-    .primary-btn{
-      position:relative;
-      overflow:hidden;
-      background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-      box-shadow:0 0 30px var(--primary-glow);
-      transition:all var(--transition);
-      display:inline-flex;align-items:center;gap:8px;padding:10px 28px;
-      color:#0a0e1a;border:none;border-radius:60px;font-size:.85rem;font-weight:600;
-      cursor:pointer;text-decoration:none;
-      min-height:var(--touch-target);min-width:var(--touch-target);
-      touch-action:manipulation;letter-spacing:.3px
-    }
-    .primary-btn::after{
-      content:'';
-      position:absolute;top:-50%;left:-50%;width:200%;height:200%;
-      background:conic-gradient(from 0deg,transparent,rgba(255,255,255,0.1),transparent,rgba(255,255,255,0.1),transparent);
-      animation:rotate-shine 6s linear infinite;
-      pointer-events:none
-    }
-    @keyframes rotate-shine{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-    .primary-btn:hover{transform:scale(1.05);box-shadow:0 0 60px var(--primary-glow)}
-    .primary-btn:active{transform:scale(.96)}
-    .primary-btn .arrow{transition:transform .3s;display:inline-block}
-    .primary-btn:hover .arrow{transform:translateX(4px)}
-
-    /* ===== 光感进度条 ===== */
-    .skill-fill{background:linear-gradient(90deg,var(--primary-dark),var(--primary),var(--primary-light));box-shadow:0 0 20px var(--primary-glow)}
-
-    /* ===== 光感输入框 ===== */
-    .custom-photo-box{border-color:var(--border);transition:all var(--transition)}
-    .custom-photo-box.has-image{border-color:var(--primary);box-shadow:0 0 30px var(--primary-glow)}
-    .custom-photo-box:hover{border-color:var(--primary);box-shadow:0 0 30px var(--primary-glow)}
-
-    /* ===== 光感标签 ===== */
-    .badge:hover,.hero-badge-item:hover,.interest-item:hover{
-      border-color:var(--primary);
-      color:var(--primary);
-      box-shadow:0 0 30px var(--primary-glow);
-      transform:translateY(-2px)
-    }
-
-    /* ===== 光感滚动条 ===== */
-    ::-webkit-scrollbar{width:6px;height:6px}
-    ::-webkit-scrollbar-track{background:var(--bg);border-radius:10px}
-    ::-webkit-scrollbar-thumb{background:var(--primary);border-radius:10px;box-shadow:0 0 20px var(--primary-glow)}
-    ::-webkit-scrollbar-thumb:hover{background:var(--primary-light)}
-
-    /* ===== 其他原有样式保留 ===== */
-    ::selection{background:var(--primary);color:#0a0e1a}
-    html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
-    body{background:transparent;color:var(--text);font-family:var(--font);line-height:1.6;padding:0 12px 40px;transition:color var(--transition);-webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative;z-index:1;min-height:100vh}
-    .container{max-width:var(--max-width);margin:0 auto;padding-top:calc(var(--nav-height)+12px);position:relative;z-index:2}
-    a{color:var(--primary);text-decoration:none}
-    img{display:block;max-width:100%;height:auto}
-    button,.clickable,.tab-btn,.icon-btn,.nav-links a,.badge,.interest-item,.photo-upload-btn,.copy-btn{min-height:var(--touch-target);min-width:var(--touch-target);touch-action:manipulation}
-
-    /* ===== 导航 ===== */
-    .navbar{position:fixed;top:0;left:0;right:0;padding:0 12px;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;z-index:100;border-bottom:1px solid var(--border)}
-    [data-theme="light"] .navbar{background:rgba(232,237,245,0.75)}
-    .nav-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
-    .nav-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;color:#0a0e1a;overflow:hidden;flex-shrink:0;border:1.5px solid var(--primary);box-shadow:0 0 20px var(--primary-glow);cursor:pointer;transition:transform .2s}
-    .nav-avatar img{width:100%;height:100%;object-fit:cover}
-    .nav-name{font-weight:600;font-size:1rem;letter-spacing:.5px;color:var(--text);white-space:nowrap}
-    .nav-links{display:flex;gap:2px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0;max-width:55%;-ms-overflow-style:none;scrollbar-width:none}
-    .nav-links::-webkit-scrollbar{display:none}
-    .nav-links a{font-size:.68rem;color:var(--text-secondary);padding:4px 10px;border-radius:30px;font-weight:450;letter-spacing:.2px;border:1px solid transparent;white-space:nowrap;flex-shrink:0;min-height:32px;min-width:32px;display:flex;align-items:center;background:transparent;transition:all var(--transition)}
-    .nav-links a:hover,.nav-links a:active{background:var(--primary-dim);color:var(--primary);border-color:var(--primary);box-shadow:0 0 30px var(--primary-glow)}
-    .nav-actions{display:flex;gap:4px;align-items:center;flex-shrink:0}
-    .icon-btn{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:40px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:var(--text-secondary);transition:all var(--transition);min-height:34px;min-width:34px;padding:0}
-    .icon-btn:hover,.icon-btn:active{background:var(--primary-dim);border-color:var(--primary);color:var(--primary);box-shadow:0 0 30px var(--primary-glow)}
-    .icon-btn.print-btn{font-size:.7rem;font-weight:500;width:auto;padding:0 12px;gap:4px}
-
-    /* ===== Hero ===== */
-    .hero{border-radius:var(--radius);padding:20px 18px;margin-bottom:20px;position:relative;overflow:hidden;border:1px solid var(--border)}
-    .hero-grid{display:flex;flex-direction:column;gap:16px}
-    .hero-main{width:100%}
-    .hero-main h1{font-size:1.6rem;font-weight:700;letter-spacing:-.2px;margin-bottom:2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .hero-main h1 .tagline{font-size:.7rem;font-weight:400;color:var(--text-muted);letter-spacing:1px;background:var(--bg-card-2);padding:2px 12px;border-radius:30px;border:1px solid var(--border)}
-    .hero-avatar-lg{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:600;color:#0a0e1a;overflow:hidden;flex-shrink:0;border:2px solid var(--primary);box-shadow:0 0 40px var(--primary-glow);cursor:pointer;transition:transform .25s;position:relative}
-    .hero-avatar-lg img{width:100%;height:100%;object-fit:cover}
-    .hero-main .sub{font-size:.9rem;color:var(--text-secondary);margin-bottom:6px}
-    .hero-main .sub span{background:var(--primary-dim);padding:1px 10px;border-radius:30px;font-weight:500;color:var(--primary);border:1px solid var(--border);display:inline-block}
-    .hero-tags{display:flex;flex-wrap:wrap;gap:6px 8px;margin:6px 0 10px}
-    .badge{background:var(--bg-card-2);color:var(--text-secondary);padding:3px 12px;border-radius:40px;font-size:.68rem;font-weight:500;border:1px solid var(--border);transition:all var(--transition);letter-spacing:.2px;display:inline-flex;align-items:center;min-height:28px}
-    .contact-row{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
-    .contact-item{display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text-secondary);flex-wrap:wrap}
-    .contact-item .copy-btn{background:transparent;border:none;cursor:pointer;color:var(--primary);font-size:.65rem;padding:2px 8px;border-radius:30px;transition:all var(--transition);border:1px solid transparent;min-height:28px;min-width:28px}
-    .copy-btn:hover,.copy-btn:active{background:var(--primary-dim);border-color:var(--border);box-shadow:0 0 20px var(--primary-glow)}
-    .avatar-upload-wrapper{position:relative;display:inline-block}
-    .avatar-upload-wrapper input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border-radius:50%;z-index:2}
-    .avatar-upload-hint{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:var(--primary);font-size:.45rem;padding:1px 8px;border-radius:20px;white-space:nowrap;opacity:0;transition:opacity .25s;pointer-events:none;z-index:3;border:1px solid var(--primary);font-weight:500;letter-spacing:.3px;box-shadow:0 0 20px var(--primary-glow)}
-    .avatar-upload-wrapper:hover .avatar-upload-hint{opacity:1}
-    .photo-upload-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
-    .photo-upload-label{font-size:.78rem;color:var(--text-secondary);letter-spacing:.2px}
-    .photo-upload-label strong{color:var(--primary);text-shadow:0 0 20px var(--primary-glow)}
-    .photo-upload-area{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-    .photo-preview{width:64px;height:84px;border:2px dashed var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--text-muted);transition:all var(--transition);overflow:hidden;flex-shrink:0;position:relative}
-    .photo-preview.has-image{border-style:solid;border-color:var(--primary);box-shadow:0 0 30px var(--primary-glow)}
-    .photo-preview img{width:100%;height:100%;object-fit:cover}
-    .photo-preview .placeholder-text{text-align:center;line-height:1.3;padding:2px}
-    .photo-preview .placeholder-text span{display:block;font-size:1.4rem}
-    .photo-upload-btn{background:var(--bg-card-2);border:1px solid var(--border);color:var(--text-secondary);padding:4px 14px;border-radius:30px;font-size:.72rem;cursor:pointer;transition:all var(--transition);display:inline-flex;align-items:center;gap:4px;min-height:34px;min-width:34px}
-    .photo-upload-btn:hover,.photo-upload-btn:active{border-color:var(--primary);color:var(--primary);box-shadow:0 0 30px var(--primary-glow)}
-    .photo-upload-btn.remove-btn{border-color:#ff4444;color:#ff4444}
-    .photo-upload-btn.remove-btn:hover,.photo-upload-btn.remove-btn:active{background:#ff4444;color:#0a0e1a;box-shadow:0 0 30px rgba(255,68,68,.3)}
-    .photo-upload-input{display:none}
-    .hero-badge-group{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start;margin-top:4px}
-    .hero-badge-item{background:var(--bg-card-2);padding:5px 14px;border-radius:60px;font-weight:500;color:var(--text-secondary);border:1px solid var(--border);font-size:.75rem;display:inline-flex;align-items:center;gap:4px;transition:all var(--transition);min-height:32px}
-
-    /* ===== 技术追踪模块（原Spider Tracker改为通用） ===== */
-    .tech-tracker-section{position:relative;z-index:2;margin-bottom:20px}
-    .tech-tracker-card{background:var(--bg-card);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;box-shadow:var(--shadow);transition:all var(--transition);position:relative;overflow:hidden}
-    .tech-tracker-card::before{content:'⚡';position:absolute;right:12px;bottom:8px;font-size:3rem;opacity:.06;pointer-events:none}
-    .tech-tracker-card:hover{border-color:var(--primary);box-shadow:0 0 60px var(--primary-glow),var(--shadow-hover);transform:translateY(-2px)}
-    .tech-tracker-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-    .tech-tracker-icon{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#0a0e1a;box-shadow:0 0 40px var(--primary-glow);flex-shrink:0;border:2px solid var(--primary)}
-    .tech-tracker-info h3{font-size:1.1rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .tech-tracker-info h3 .badge-new{font-size:.55rem;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#0a0e1a;padding:1px 10px;border-radius:30px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;animation:pulse-badge 2s infinite;box-shadow:0 0 20px var(--primary-glow)}
-    @keyframes pulse-badge{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.95)}}
-    .tech-tracker-info p{font-size:.82rem;color:var(--text-secondary);margin-top:2px}
-    .tech-tracker-btn-group{display:flex;gap:10px;flex-wrap:wrap}
-
-    /* ===== Section ===== */
-    .section{border-radius:var(--radius);padding:18px 16px;margin-bottom:16px;position:relative;overflow:hidden;border:1px solid var(--border)}
-    .section-title{font-size:1.1rem;font-weight:650;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text);letter-spacing:.3px}
-    .section-title .emoji{font-size:1.2rem}
-    .section-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border),transparent)}
-
-    /* ===== 亮点 ===== */
-    .highlight-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:4px 0}
-    .highlight-card{background:var(--bg-card-2);border-radius:var(--radius);padding:14px 10px;border:1px solid var(--border);transition:all var(--transition);text-align:center;position:relative;overflow:hidden}
-    .highlight-number{font-size:1.6rem;font-weight:700;color:var(--primary);line-height:1.2;font-family:'Courier New',monospace;text-shadow:0 0 30px var(--primary-glow)}
-    .highlight-label{color:var(--text-secondary);font-size:.75rem}
-
-    /* ===== 经历 ===== */
-    .exp-item{padding:12px 0 10px;border-bottom:1px solid var(--border)}
-    .exp-item:last-child{border-bottom:none}
-    .exp-header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px}
-    .exp-title{font-weight:650;font-size:.95rem;color:var(--text)}
-    .exp-org{color:var(--primary);font-weight:500;font-size:.85rem;text-shadow:0 0 20px var(--primary-glow)}
-    .exp-date{color:var(--text-muted);font-size:.7rem;background:var(--bg-card-2);padding:0 10px;border-radius:30px;border:1px solid var(--border);font-family:'Courier New',monospace;display:inline-block}
-    .exp-desc{color:var(--text-secondary);font-size:.85rem;padding-left:16px;list-style:none;margin-top:4px}
-    .exp-desc li{margin-bottom:2px;position:relative}
-    .exp-desc li::before{content:'▹';position:absolute;left:-14px;top:0;color:var(--primary);font-size:.7rem}
-
-    /* ===== 项目 ===== */
-    .project-grid{display:grid;grid-template-columns:1fr;gap:12px}
-    .project-card{background:var(--bg-card-2);padding:14px;border-radius:var(--radius);border:1px solid var(--border);transition:all var(--transition);position:relative;overflow:hidden}
-    .project-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),transparent);opacity:0;transition:opacity .3s}
-    .project-card:hover::before,.project-card:active::before{opacity:1}
-    .project-name{font-weight:650;font-size:.92rem;color:var(--text)}
-    .project-stack{font-size:.62rem;color:var(--text-muted);margin:2px 0 4px;background:var(--bg-card);display:inline-block;padding:0 10px;border-radius:30px;border:1px solid var(--border);font-family:'Courier New',monospace}
-    .project-desc{color:var(--text-secondary);font-size:.8rem}
-
-    /* ===== 技能 ===== */
-    .skill-grid{display:grid;grid-template-columns:1fr;gap:10px}
-    .skill-item{display:flex;flex-direction:column;gap:2px}
-    .skill-label{font-weight:500;font-size:.8rem;color:var(--text-secondary);font-family:'Courier New',monospace}
-    .skill-bar{height:4px;border-radius:20px;overflow:hidden;border:1px solid var(--border);background:rgba(255,255,255,.05)}
-    .skill-fill{height:100%;border-radius:20px;width:0%;transition:width .8s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 30px var(--primary-glow)}
-
-    /* ===== 教育 ===== */
-    .edu-item{display:flex;flex-wrap:wrap;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);align-items:baseline;gap:4px}
-    .edu-item:last-child{border-bottom:none}
-    .edu-item strong{font-size:.92rem}
-    .edu-detail{color:var(--text-secondary);font-size:.8rem;padding:2px 0 6px}
-
-    /* ===== 爱好 ===== */
-    .interest-grid{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:2px}
-    .interest-item{background:var(--bg-card-2);padding:4px 14px;border-radius:40px;font-size:.78rem;border:1px solid var(--border);color:var(--text-secondary);transition:all var(--transition);display:inline-flex;align-items:center;gap:4px;min-height:32px}
-
-    /* ===== 自定义照片 ===== */
-    .custom-photo-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:10px}
-    @media(min-width:480px){.custom-photo-grid{grid-template-columns:1fr 1fr}}
-    .custom-photo-card{background:var(--bg-card-2);border-radius:var(--radius);padding:14px;border:1px solid var(--border);transition:all var(--transition)}
-    .custom-photo-card .card-title{font-weight:600;font-size:.85rem;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-    .custom-photo-card .card-title .badge-icon{color:var(--primary)}
-    .custom-photo-box{width:100%;aspect-ratio:4/3;border:2px dashed var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.7rem;color:var(--text-muted);transition:all var(--transition);overflow:hidden;cursor:pointer;position:relative;min-height:100px;background:rgba(255,255,255,.03)}
-    .custom-photo-box.has-image{border-style:solid;border-color:var(--primary);box-shadow:0 0 40px var(--primary-glow)}
-    .custom-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
-    .custom-photo-box .placeholder-icon{font-size:2rem;margin-bottom:4px}
-    .custom-photo-box .placeholder-text{text-align:center;line-height:1.3}
-    .custom-photo-box input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}
-    .custom-photo-box .upload-hint{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:.5rem;padding:1px 10px;border-radius:20px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:3;white-space:nowrap}
-    .custom-photo-box:hover .upload-hint{opacity:1}
-    .custom-photo-remove{background:transparent;border:1px solid #ff4444;color:#ff4444;padding:2px 12px;border-radius:30px;font-size:.6rem;cursor:pointer;margin-top:6px;transition:all var(--transition);min-height:28px;min-width:28px}
-    .custom-photo-remove:hover,.custom-photo-remove:active{background:#ff4444;color:#0a0e1a;box-shadow:0 0 20px rgba(255,68,68,.3)}
-
-    /* ===== 城市简介 ===== */
-    .city-profile{background:var(--bg-card-2);border-radius:var(--radius);padding:16px;margin-top:8px;border:1px solid var(--border);transition:all var(--transition)}
-    .city-profile .city-name{font-size:1.1rem;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:8px;margin-bottom:8px;text-shadow:0 0 30px var(--primary-glow)}
-    .city-profile .city-name .location-icon{font-size:1.2rem}
-    .city-profile .city-desc{font-size:.82rem;color:var(--text-secondary);line-height:1.8;text-align:justify}
-    .city-profile .city-desc strong{color:var(--text);font-weight:600}
-    .city-profile .city-tags{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:10px}
-    .city-profile .city-tags .city-tag{background:var(--bg-card);padding:2px 12px;border-radius:30px;font-size:.65rem;border:1px solid var(--border);color:var(--text-muted);transition:all var(--transition)}
-    .city-profile .city-tags .city-tag:hover{border-color:var(--primary);color:var(--primary);box-shadow:0 0 20px var(--primary-glow)}
-
-    /* ===== Footer ===== */
-    .footer{text-align:center;font-size:.68rem;color:var(--text-muted);margin-top:16px;padding:12px 0 4px;border-top:1px solid var(--border);letter-spacing:.5px;font-family:'Courier New',monospace}
-    .footer span{color:var(--primary);text-shadow:0 0 20px var(--primary-glow)}
-
-    /* ===== 返回顶部 ===== */
-    .back-top{position:fixed;bottom:20px;right:16px;background:var(--bg-card);color:var(--primary);border:1px solid var(--primary);width:44px;height:44px;border-radius:50%;font-size:1.1rem;cursor:pointer;box-shadow:0 0 40px var(--primary-glow);transition:all var(--transition);opacity:0;pointer-events:none;transform:scale(.9);z-index:50;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center}
-    .back-top.show{opacity:1;pointer-events:auto;transform:scale(1)}
-    .back-top:hover,.back-top:active{background:var(--primary);color:#0a0e1a;transform:scale(1.06);box-shadow:0 0 60px var(--primary-glow)}
-
-    /* ===== 打印 ===== */
-    @media print{body{background:white!important;padding:0!important}.navbar,.back-top,.icon-btn,.photo-upload-btn,.photo-upload-input,.avatar-upload-hint,.avatar-upload-wrapper input[type="file"],.custom-photo-box input[type="file"],.custom-photo-remove,.custom-photo-box .upload-hint{display:none!important}.container{padding-top:10px!important}.section{box-shadow:none!important;border:1px solid #ccc!important;break-inside:avoid}.hero{box-shadow:none!important;border:1px solid #ccc!important;break-inside:avoid}.hero::before,.hero::after,.section::before,.section::after,.project-card::before{display:none!important}.project-card:hover,.highlight-card:hover,.interest-item:hover{transform:none!important;box-shadow:none!important}.photo-preview{border:1px solid #ccc!important;background:#f5f5f5!important}.custom-photo-box{border:1px solid #ccc!important;background:#f5f5f5!important}.city-profile{border:1px solid #ccc!important}[data-theme="dark"]{--bg:white;--bg-card:white;--bg-card-2:#f5f5f5;--text:#111;--text-secondary:#222;--border:#ccc;--primary:#0066cc}}
-
-    /* ===== 响应式 ===== */
-    @media(min-width:640px){body{padding:0 24px 50px}.hero{padding:28px 32px}.hero-grid{flex-direction:row}.hero-main h1{font-size:2rem}.hero-avatar-lg{width:72px;height:72px;font-size:2rem}.highlight-grid{grid-template-columns:repeat(4,1fr)}.project-grid{grid-template-columns:repeat(2,1fr)}.skill-grid{grid-template-columns:repeat(2,1fr)}.section{padding:24px 28px}.photo-upload-area{flex-direction:row}.photo-preview{width:80px;height:104px}.contact-row{gap:12px 24px}.custom-photo-grid{grid-template-columns:1fr 1fr}}
-    @media(min-width:1024px){.project-grid{grid-template-columns:repeat(2,1fr)}.skill-grid{grid-template-columns:repeat(3,1fr)}.container{padding-top:88px}.navbar{padding:0 32px;height:64px}.nav-avatar{width:36px;height:36px}.nav-name{font-size:1.2rem}.nav-links a{font-size:.8rem;padding:5px 14px}}
-    @media(hover:none){.badge:hover,.project-card:hover,.highlight-card:hover,.interest-item:hover,.hero-badge-item:hover{transform:none;box-shadow:none}.badge:active,.project-card:active,.highlight-card:active,.interest-item:active,.hero-badge-item:active{transform:scale(.96)}}
-    @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-  </style>
+        /* 手机端适配：上下拼接 */
+        @media (max-width: 600px) {
+            #background-layer {
+                flex-direction: column;
+            }
+            .bg-half {
+                flex: none;
+                height: 50%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- ===== 光感动态壁纸 ===== -->
-  <div id="lightBg"><canvas id="lightCanvas"></canvas></div>
 
-  <nav class="navbar">
-    <div class="nav-left">
-      <div class="nav-avatar" id="navAvatar"><span id="navPlaceholder">于</span></div>
-      <div class="nav-name">于<span>锦辉</span></div>
-    </div>
-    <div class="nav-links">
-      <a href="#hero">首页</a>
-      <a href="#highlights">亮点</a>
-      <a href="#exp-work">工作</a>
-      <a href="#exp-campus">科研</a>
-      <a href="#projects">项目</a>
-      <a href="#skills">技能</a>
-      <a href="#edu">教育</a>
-    </div>
-    <div class="nav-actions">
-      <button class="icon-btn" id="themeToggle">🌓</button>
-      <button class="icon-btn print-btn" onclick="window.print()">🖨️ 打印</button>
-    </div>
-  </nav>
-
-  <main class="container">
-    <!-- ===== Hero ===== -->
-    <section id="hero" class="hero">
-      <div class="hero-grid">
-        <div class="hero-main">
-          <h1>
-            <span class="avatar-upload-wrapper">
-              <span class="hero-avatar-lg" id="heroAvatar"><span id="heroPlaceholder">于</span></span>
-              <input type="file" id="avatarUpload" accept="image/*">
-              <span class="avatar-upload-hint">📷 上传</span>
-            </span>
-            于锦辉
-            <span class="tagline">// 化学 × AI <span style="color:var(--primary);text-shadow:0 0 20px var(--primary-glow)">✦</span></span>
-          </h1>
-          <div class="sub"><span>✦ 苏州大学</span> · 化学专业 本科生 (2026–2030)</div>
-          <div class="hero-tags">
-            <span class="badge">🧪 材料化学分析</span>
-            <span class="badge">🤖 AI 分子设计</span>
-            <span class="badge">🐍 Python / PyTorch</span>
-            <span class="badge">📊 数据驱动合成</span>
-          </div>
-          <div class="contact-row">
-            <span class="contact-item">📞 17205211652</span>
-            <span class="contact-item">📧 <span id="emailDisplay">yujinhui@email.com</span> <button class="copy-btn" id="copyEmail">复制</button></span>
-            <span class="contact-item">💬 微信同号</span>
-            <span class="contact-item">🐧 QQ: 1476715257</span>
-          </div>
-          <div class="photo-upload-section">
-            <div class="photo-upload-label"><strong>📸 一寸照片</strong><span style="font-size:.65rem;color:var(--text-muted);margin-left:6px;">(简历/报名)</span></div>
-            <div class="photo-upload-area">
-              <div class="photo-preview" id="photoPreview"><span class="placeholder-text"><span>🖼️</span>上传</span></div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="photo-upload-btn" id="photoUploadBtn">📤 选择</button>
-                <button class="photo-upload-btn remove-btn" id="photoRemoveBtn">✕ 移除</button>
-              </div>
-              <input type="file" class="photo-upload-input" id="photoUploadInput" accept="image/*">
-              <span style="font-size:.6rem;color:var(--text-muted);">推荐 295×413px</span>
-            </div>
-          </div>
-        </div>
-        <div class="hero-badge-group">
-          <span class="hero-badge-item">🏆 化学竞赛 省二</span>
-          <span class="hero-badge-item">🤖 阿里AI训练师 初级</span>
-          <span class="hero-badge-item">📚 3年+ 造景经验</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 技术追踪模块（原Spider Tracker去除，改为通用科技模块） ===== -->
-    <div class="tech-tracker-section">
-      <div class="tech-tracker-card">
-        <div class="tech-tracker-left">
-          <div class="tech-tracker-icon">⚡</div>
-          <div class="tech-tracker-info">
-            <h3>AI 技术追踪 <span class="badge-new">✦ 光感觉醒</span></h3>
-            <p>实时追踪前沿AI技术动态 · 光感粒子矩阵 <span style="color:var(--primary);text-shadow:0 0 20px var(--primary-glow)">✦</span></p>
-          </div>
-        </div>
-        <div class="tech-tracker-btn-group">
-          <a href="#" class="primary-btn" onclick="alert('⚡ 光感粒子矩阵已激活！');return false;">⚡ 光感启动 <span class="arrow">→</span></a>
-        </div>
-      </div>
+    <!-- 背景图片区域 -->
+    <div id="background-layer">
+        <div class="bg-half bg-left"></div>
+        <div class="bg-half bg-right"></div>
     </div>
 
-    <!-- ===== 亮点 ===== -->
-    <section id="highlights" class="section">
-      <div class="section-title"><span class="emoji">⚡</span> 亮点成果</div>
-      <div class="highlight-grid" id="highlightGrid"></div>
-    </section>
+    <!-- 粒子画布 -->
+    <canvas id="canvas-layer"></canvas>
 
-    <!-- ===== 工作/实习 ===== -->
-    <section id="exp-work" class="section">
-      <div class="section-title"><span class="emoji">💼</span> 工作 / 实习</div>
-      <div id="workExp"></div>
-    </section>
+    <!-- 新增：下载按钮 -->
+    <div id="download-wrapper">
+        <a id="download-btn">📥 下载此网页</a>
+    </div>
 
-    <!-- ===== 校园/科研 ===== -->
-    <section id="exp-campus" class="section">
-      <div class="section-title"><span class="emoji">🔬</span> 校园 / 科研</div>
-      <div id="campusExp"></div>
-    </section>
-
-    <!-- ===== 项目 ===== -->
-    <section id="projects" class="section">
-      <div class="section-title"><span class="emoji">📁</span> 项目经历</div>
-      <div style="margin-bottom:14px;">
-        <div style="font-weight:600;font-size:.9rem;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;letter-spacing:.3px;text-shadow:0 0 20px var(--primary-glow);">
-          <span>⟡ AI + 化学</span><span style="flex:1;height:1px;background:var(--border);"></span>
-        </div>
-        <div class="project-grid" id="aiProjects"></div>
-      </div>
-      <div>
-        <div style="font-weight:600;font-size:.9rem;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;letter-spacing:.3px;text-shadow:0 0 20px var(--primary-glow);">
-          <span>⟡ 实验 / 合成</span><span style="flex:1;height:1px;background:var(--border);"></span>
-        </div>
-        <div class="project-grid" id="labProjects"></div>
-      </div>
-    </section>
-
-    <!-- ===== 技能 ===== -->
-    <section id="skills" class="section">
-      <div class="section-title"><span class="emoji">◈</span> 专业技能</div>
-      <div class="skill-grid" id="skillGrid"></div>
-    </section>
-
-    <!-- ===== 教育 ===== -->
-    <section id="edu" class="section">
-      <div class="section-title"><span class="emoji">◉</span> 教育背景</div>
-      <div id="eduList"></div>
-      <div style="margin-top:16px;">
-        <div class="section-title" style="font-size:1rem;margin-bottom:8px;"><span class="emoji">◆</span> 获奖与证书</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="certBadges"></div>
-      </div>
-      <div style="margin-top:16px;">
-        <div class="section-title" style="font-size:1rem;margin-bottom:8px;"><span class="emoji">◈</span> 兴趣爱好</div>
-        <div class="interest-grid" id="interestGrid"></div>
-      </div>
-    </section>
-
-    <!-- ===== 自定义照片 ===== -->
-    <section class="section">
-      <div class="section-title"><span class="emoji">📸</span> 作品 / 证书展示</div>
-      <div class="custom-photo-grid">
-        <div class="custom-photo-card">
-          <div class="card-title"><span class="badge-icon">🤖</span> 阿里AI训练师（初级）证书</div>
-          <div class="custom-photo-box" id="certPhotoBox">
-            <span class="placeholder-icon">📜</span>
-            <span class="placeholder-text">点击上传证书截图</span>
-            <input type="file" id="certPhotoInput" accept="image/*">
-            <span class="upload-hint">📷 点击上传</span>
-          </div>
-          <button class="custom-photo-remove" id="certPhotoRemove">✕ 移除</button>
-        </div>
-        <div class="custom-photo-card">
-          <div class="card-title"><span class="badge-icon">📷</span> 摄影作品精选</div>
-          <div class="custom-photo-box" id="photoWorkBox">
-            <span class="placeholder-icon">🖼️</span>
-            <span class="placeholder-text">点击上传摄影作品</span>
-            <input type="file" id="photoWorkInput" accept="image/*">
-            <span class="upload-hint">📷 点击上传</span>
-          </div>
-          <button class="custom-photo-remove" id="photoWorkRemove">✕ 移除</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 城市简介 ===== -->
-    <section class="section">
-      <div class="section-title"><span class="emoji">📍</span> 我的城市 · 江苏淮安</div>
-      <div class="city-profile">
-        <div class="city-name"><span class="location-icon">🏛️</span> 淮安 · Huai'an <span style="color:var(--primary);text-shadow:0 0 30px var(--primary-glow);animation:pulse-glow 3s ease-in-out infinite;">✦</span></div>
-        <div class="city-desc">
-          <p><strong>淮安</strong>，坐落于江苏省中北部、江淮平原东部，是一座拥有2200多年建城史的<strong>国家历史文化名城</strong>。这里不仅是<strong>周恩来总理</strong>的故乡，更因“<strong>运河之都</strong>”的美誉而名扬天下——京杭大运河与淮河在此交汇，明清时期曾是漕运枢纽、盐运要冲，与苏州、杭州、扬州并称“运河四大都市”。</p>
-          <p style="margin-top:6px;"><strong>🏮 文化与旅游</strong> · 淮安是<strong>淮扬菜</strong>的发源地之一，软兜长鱼、平桥豆腐、蟹黄汤包等名菜享誉海内外，2019年入选联合国教科文组织“世界美食之都”。名胜古迹星罗棋布：<strong>周恩来纪念馆</strong>、<strong>河下古镇</strong>（千年水乡）、<strong>清晏园</strong>（中国治水史缩影）、<strong>里运河文化长廊</strong>（夜游画舫，流光溢彩）。每年举办的<strong>淮安马拉松</strong>和<strong>龙虾节</strong>，吸引数十万游客前来体验。</p>
-          <p style="margin-top:6px;"><strong>📈 经济与产业</strong> · 淮安是长三角北部重要的<strong>现代工业城市</strong>，已形成<strong>电子信息、高端装备制造、新能源新材料、食品加工</strong>四大主导产业。2025年全市GDP突破5000亿元，增速位居苏北前列。台资集聚示范区、淮安高新区等平台吸引了鹏鼎控股、敏实集团等龙头企业落户。同时，作为<strong>全国重要商品粮基地</strong>，优质稻米、生猪、水产等农产品畅销长三角。</p>
-          <p style="margin-top:6px;"><strong>🏛️ 政治与区位</strong> · 淮安是苏北重要中心城市，<strong>淮安涟水国际机场</strong>已开通30余条航线，<strong>徐宿淮盐高铁</strong>、<strong>连淮扬镇高铁</strong>交汇，实现2小时直达南京、3小时通达上海，深度融入长三角“2小时经济圈”。城市正全力建设“<strong>绿色高地、枢纽新城</strong>”，打造大运河文化带标志城市。</p>
-          <p style="margin-top:6px;"><strong>🌳 生态与生活</strong> · 淮安坐拥<strong>洪泽湖</strong>（中国第四大淡水湖）、<strong>白马湖</strong>等湖泊湿地，城市绿化覆盖率超42%，获评“国家园林城市”“全国文明城市”。在这里，古老的大运河与现代的产业脉动交织，慢生活的烟火气与创新创业的活力并存——清晨一碗长鱼面，午后漫步里运河畔，夜晚在文创园听一场民谣，便是淮安人最平凡的幸福。</p>
-        </div>
-        <div class="city-tags">
-          <span class="city-tag">🏺 运河之都</span><span class="city-tag">🍲 世界美食之都</span>
-          <span class="city-tag">🌟 周恩来故乡</span><span class="city-tag">🏭 长三角北部工业重镇</span>
-          <span class="city-tag">🌾 鱼米之乡</span><span class="city-tag">🚄 高铁枢纽</span>
-          <span class="city-tag">🌊 洪泽湖畔</span><span class="city-tag">📖 历史文化名城</span>
-        </div>
-      </div>
-    </section>
-
-    <footer class="footer">⟡ <span>于锦辉</span> · 光感简历 v3.0 · 更新 2026.08</footer>
-  </main>
-
-  <button class="back-top" id="backTop">↑</button>
-
-  <script>
-    (function() {
-      'use strict';
-
-      const $ = id => document.getElementById(id);
-
-      // ===== 数据 =====
-      const resume = {
-        highlights: [
-          { number: '前8%', label: '全国化学奥赛 省二等奖' },
-          { number: 'AI认证', label: '阿里人工智能训练师 初级' },
-          { number: '3年+', label: '鱼缸造景 & 水质管理' },
-          { number: 'Python', label: 'PyTorch / RDKit / 数据分析' }
-        ],
-        work: [
-          { title: '【待补】实习/科研助理', org: '化工 / 材料 / AI制药', date: '2026 – 2027', desc: ['此处将补充分析检测、合成优化或数据建模等经历。'] }
-        ],
-        campus: [
-          { title: 'AI辅助分子性质预测', org: '苏州大学 · 化学+AI 课题组', date: '2026.09 – 至今', desc: ['利用图神经网络预测有机光电材料带隙，数据清洗与特征工程进行中。', '参与组会汇报与文献调研，独立完成基线模型搭建。'] },
-          { title: '纳米催化剂合成优化', org: '苏州大学 化学实验中心', date: '2026.10 – 至今', desc: ['设计正交实验优化沉淀法合成条件，初步产率提升约15%。', '使用XRD和SEM进行产物表征，分析晶相与形貌。'] }
-        ],
-        ai: [
-          { name: '分子生成与虚拟筛选', stack: 'Python · PyTorch · RDKit', desc: '基于VAE生成新型共轭分子，结合活性预测模型进行高通量筛选。' },
-          { name: '化学反应产率预测', stack: 'XGBoost · 分子指纹 · SHAP', desc: '构建多任务回归模型，预测不同催化剂下的产率，R² > 0.82。' }
-        ],
-        lab: [
-          { name: '水热法制备纳米ZnO', stack: '水热合成 · XRD · SEM', desc: '调控温度/pH值，获得均匀六方纤锌矿结构，粒径分布窄。' },
-          { name: '鱼缸生态系统水质监控', stack: 'pH/硬度/氮循环 · 数据记录', desc: '维护2个水草缸，生物存活率95%+，将化学知识用于日常管理。' }
-        ],
-        skills: [
-          { label: '材料化学分析 (UV-Vis, GC, HPLC)', pct: 80 },
-          { label: 'AI / 分子设计 (PyTorch, RDKit)', pct: 72 },
-          { label: 'Python / 数据处理 (Pandas, NumPy)', pct: 78 },
-          { label: '科研绘图 (Origin, Prism)', pct: 70 },
-          { label: '实验室技术 (合成, 纯化, 表征)', pct: 75 }
-        ],
-        edu: [
-          { school: '苏州大学', major: '化学专业 本科', period: '2026.09 – 2030.06 (预期)', detail: '核心课程：无机化学、有机化学、分析化学、物理化学、高分子化学与物理、材料科学基础、仪器分析' }
-        ],
-        certs: ['全国高中化学奥林匹克竞赛 省级二等奖 (2025)', '阿里巴巴人工智能训练师（初级） (2026)'],
-        interests: ['🏀 篮球（大前锋，善于利用身体制造进攻）', '🎵 流行音乐', '🐟 鱼缸造景（3年经验，存活率95%+）', '📷 摄影（街头/自然，Lightroom调色）']
-      };
-
-      // ===== 渲染函数 =====
-      function renderHighlights() {
-        $('highlightGrid').innerHTML = resume.highlights.map(h =>
-          '<div class="highlight-card"><div class="highlight-number">' + h.number + '</div><div class="highlight-label">' + h.label + '</div></div>'
-        ).join('');
-      }
-
-      function renderWork() {
-        $('workExp').innerHTML = resume.work.map(e =>
-          '<div class="exp-item"><div class="exp-header"><span class="exp-title">' + e.title + '</span><span class="exp-org">' + e.org + '</span><span class="exp-date">' + e.date + '</span></div><ul class="exp-desc">' + e.desc.map(d => '<li>' + d + '</li>').join('') + '</ul></div>'
-        ).join('');
-      }
-
-      function renderCampus() {
-        $('campusExp').innerHTML = resume.campus.map(e =>
-          '<div class="exp-item"><div class="exp-header"><span class="exp-title">' + e.title + '</span><span class="exp-org">' + e.org + '</span><span class="exp-date">' + e.date + '</span></div><ul class="exp-desc">' + e.desc.map(d => '<li>' + d + '</li>').join('') + '</ul></div>'
-        ).join('');
-      }
-
-      function renderProjects() {
-        $('aiProjects').innerHTML = resume.ai.map(p =>
-          '<div class="project-card"><div class="project-name">' + p.name + '</div><div class="project-stack">' + p.stack + '</div><div class="project-desc">' + p.desc + '</div></div>'
-        ).join('');
-        $('labProjects').innerHTML = resume.lab.map(p =>
-          '<div class="project-card"><div class="project-name">' + p.name + '</div><div class="project-stack">' + p.stack + '</div><div class="project-desc">' + p.desc + '</div></div>'
-        ).join('');
-      }
-
-      function renderSkills() {
-        $('skillGrid').innerHTML = resume.skills.map(s =>
-          '<div class="skill-item"><span class="skill-label">' + s.label + '</span><div class="skill-bar"><div class="skill-fill" style="width:' + s.pct + '%"></div></div></div>'
-        ).join('');
-      }
-
-      function renderEducation() {
-        $('eduList').innerHTML = resume.edu.map(e =>
-          '<div class="edu-item"><span><strong>' + e.school + '</strong> · ' + e.major + '</span><span style="color:var(--text-muted)">' + e.period + '</span></div><div class="edu-detail">' + e.detail + '</div>'
-        ).join('');
-        $('certBadges').innerHTML = resume.certs.map(c => '<span class="badge">' + c + '</span>').join('');
-        $('interestGrid').innerHTML = resume.interests.map(i => '<span class="interest-item">' + i + '</span>').join('');
-      }
-
-      // ===== 头像上传 =====
-      function initAvatar() {
-        const fileInput = $('avatarUpload');
-        const hero = $('heroAvatar');
-        const nav = $('navAvatar');
-        const saved = localStorage.getItem('userAvatar');
-        if (saved) setAvatar(saved);
-        fileInput.addEventListener('change', function(e) {
-          const f = e.target.files[0];
-          if (!f) return;
-          const r = new FileReader();
-          r.onload = function(ev) {
-            const url = ev.target.result;
-            localStorage.setItem('userAvatar', url);
-            setAvatar(url);
-          };
-          r.readAsDataURL(f);
-        });
-        function setAvatar(url) {
-          hero.innerHTML = '<img src="' + url + '" alt="头像" loading="lazy" decoding="async">';
-          nav.innerHTML = '<img src="' + url + '" alt="头像" loading="lazy" decoding="async">';
-        }
-        hero.addEventListener('click', function(e) { if (e.target.tagName === 'IMG') fileInput.click(); });
-        nav.addEventListener('click', function() { fileInput.click(); });
-      }
-
-      // ===== 一寸照片 =====
-      function initPhoto() {
-        const preview = $('photoPreview');
-        const input = $('photoUploadInput');
-        const uploadBtn = $('photoUploadBtn');
-        const removeBtn = $('photoRemoveBtn');
-        const saved = localStorage.getItem('userPhoto');
-        if (saved) setPhoto(saved);
-        uploadBtn.addEventListener('click', function() { input.click(); });
-        input.addEventListener('change', function(e) {
-          const f = e.target.files[0];
-          if (!f) return;
-          const r = new FileReader();
-          r.onload = function(ev) {
-            const url = ev.target.result;
-            localStorage.setItem('userPhoto', url);
-            setPhoto(url);
-          };
-          r.readAsDataURL(f);
-        });
-        removeBtn.addEventListener('click', function() {
-          localStorage.removeItem('userPhoto');
-          preview.innerHTML = '<span class="placeholder-text"><span>🖼️</span>上传</span>';
-          preview.classList.remove('has-image');
-          input.value = '';
-        });
-        function setPhoto(url) {
-          preview.innerHTML = '<img src="' + url + '" alt="一寸照片" loading="lazy" decoding="async">';
-          preview.classList.add('has-image');
-        }
-      }
-
-      // ===== 自定义照片 =====
-      function initCustom() {
-        const cb = $('certPhotoBox'), ci = $('certPhotoInput'), cr = $('certPhotoRemove');
-        const wb = $('photoWorkBox'), wi = $('photoWorkInput'), wr = $('photoWorkRemove');
-        const sc = localStorage.getItem('certPhoto');
-        if (sc) setCert(sc);
-        const sw = localStorage.getItem('photoWork');
-        if (sw) setWork(sw);
-
-        ci.addEventListener('change', function(e) {
-          const f = e.target.files[0];
-          if (!f) return;
-          const r = new FileReader();
-          r.onload = function(ev) {
-            const url = ev.target.result;
-            localStorage.setItem('certPhoto', url);
-            setCert(url);
-          };
-          r.readAsDataURL(f);
-        });
-        cr.addEventListener('click', function() {
-          localStorage.removeItem('certPhoto');
-          cb.innerHTML = '<span class="placeholder-icon">📜</span><span class="placeholder-text">点击上传证书截图</span><input type="file" id="certPhotoInput" accept="image/*"><span class="upload-hint">📷 点击上传</span>';
-          cb.classList.remove('has-image');
-          const ni = cb.querySelector('input');
-          if (ni) ni.addEventListener('change', function(e) {
-            const f = e.target.files[0];
-            if (!f) return;
-            const r = new FileReader();
-            r.onload = function(ev) {
-              const url = ev.target.result;
-              localStorage.setItem('certPhoto', url);
-              setCert(url);
-            };
-            r.readAsDataURL(f);
-          });
-        });
-        wi.addEventListener('change', function(e) {
-          const f = e.target.files[0];
-          if (!f) return;
-          const r = new FileReader();
-          r.onload = function(ev) {
-            const url = ev.target.result;
-            localStorage.setItem('photoWork', url);
-            setWork(url);
-          };
-          r.readAsDataURL(f);
-        });
-        wr.addEventListener('click', function() {
-          localStorage.removeItem('photoWork');
-          wb.innerHTML = '<span class="placeholder-icon">🖼️</span><span class="placeholder-text">点击上传摄影作品</span><input type="file" id="photoWorkInput" accept="image/*"><span class="upload-hint">📷 点击上传</span>';
-          wb.classList.remove('has-image');
-          const ni = wb.querySelector('input');
-          if (ni) ni.addEventListener('change', function(e) {
-            const f = e.target.files[0];
-            if (!f) return;
-            const r = new FileReader();
-            r.onload = function(ev) {
-              const url = ev.target.result;
-              localStorage.setItem('photoWork', url);
-              setWork(url);
-            };
-            r.readAsDataURL(f);
-          });
-        });
-        function setCert(url) {
-          cb.innerHTML = '<img src="' + url + '" alt="证书" loading="lazy" decoding="async"><input type="file" id="certPhotoInput" accept="image/*"><span class="upload-hint">📷 更换</span>';
-          cb.classList.add('has-image');
-          const ni = cb.querySelector('input');
-          if (ni) ni.addEventListener('change', function(e) {
-            const f = e.target.files[0];
-            if (!f) return;
-            const r = new FileReader();
-            r.onload = function(ev) {
-              const url = ev.target.result;
-              localStorage.setItem('certPhoto', url);
-              setCert(url);
-            };
-            r.readAsDataURL(f);
-          });
-        }
-        function setWork(url) {
-          wb.innerHTML = '<img src="' + url + '" alt="摄影" loading="lazy" decoding="async"><input type="file" id="photoWorkInput" accept="image/*"><span class="upload-hint">📷 更换</span>';
-          wb.classList.add('has-image');
-          const ni = wb.querySelector('input');
-          if (ni) ni.addEventListener('change', function(e) {
-            const f = e.target.files[0];
-            if (!f) return;
-            const r = new FileReader();
-            r.onload = function(ev) {
-              const url = ev.target.result;
-              localStorage.setItem('photoWork', url);
-              setWork(url);
-            };
-            r.readAsDataURL(f);
-          });
-        }
-      }
-
-      // ===== 主题 =====
-      function initTheme() {
-        const toggle = $('themeToggle');
-        const html = document.documentElement;
-        const stored = localStorage.getItem('theme');
-        if (stored === 'dark') html.setAttribute('data-theme', 'dark');
-        else if (stored === 'light') html.removeAttribute('data-theme');
-        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) html.setAttribute('data-theme', 'dark');
-        toggle.addEventListener('click', function() {
-          const isDark = html.getAttribute('data-theme') === 'dark';
-          if (isDark) { html.removeAttribute('data-theme'); localStorage.setItem('theme', 'light'); }
-          else { html.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); }
-        });
-      }
-
-      // ===== 复制邮箱 =====
-      function initCopy() {
-        const btn = $('copyEmail');
-        const display = $('emailDisplay');
-        const full = 'yujinhui@email.com';
-        display.textContent = full;
-        btn.addEventListener('click', function() {
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText(full).then(function() {
-              const orig = btn.textContent;
-              btn.textContent = '✅ 已复制';
-              setTimeout(function() { btn.textContent = orig; }, 2000);
-            }).catch(function() {});
-          } else {
-            const ta = document.createElement('textarea');
-            ta.value = full;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            const orig = btn.textContent;
-            btn.textContent = '✅ 已复制';
-            setTimeout(function() { btn.textContent = orig; }, 2000);
-          }
-        });
-      }
-
-      // ===== 返回顶部 =====
-      function initBack() {
-        const btn = $('backTop');
-        let ticking = false;
-        window.addEventListener('scroll', function() {
-          if (!ticking) {
-            window.requestAnimationFrame(function() {
-              if (window.scrollY > 400) btn.classList.add('show');
-              else btn.classList.remove('show');
-              ticking = false;
-            });
-            ticking = true;
-          }
-        });
-        btn.addEventListener('click', function() {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-      }
-
-      // ===== 平滑锚点 =====
-      function initSmooth() {
-        document.querySelectorAll('a[href^="#"]').forEach(function(a) {
-          a.addEventListener('click', function(e) {
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-              e.preventDefault();
-              const h = 60;
-              const p = target.getBoundingClientRect().top + window.pageYOffset - h;
-              window.scrollTo({ top: p, behavior: 'smooth' });
-            }
-          });
-        });
-      }
-
-      // ===== 光感动效壁纸（纯科技光感，无蜘蛛侠/琴格雷元素） =====
-      function initLightBg() {
-        const canvas = document.getElementById('lightCanvas');
+    <script>
+        // --- 粒子引擎核心逻辑 ---
+        const canvas = document.getElementById('canvas-layer');
         const ctx = canvas.getContext('2d');
-        let w, h;
-        const particles = [];
-        const num = 120;
-        const mouse = { x: null, y: null };
 
-        function resize() {
-          w = canvas.width = window.innerWidth;
-          h = canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        let width, height;
+        let particles = [];
+        const particleCount = 220; // 粒子数量，想密一些调大这个数值
 
-        for (let i = 0; i < num; i++) {
-          particles.push({
-            x: Math.random() * w,
-            y: Math.random() * h,
-            vx: (Math.random() - 0.5) * 0.8,
-            vy: (Math.random() - 0.5) * 0.8,
-            size: Math.random() * 2.5 + 1,
-            alpha: Math.random() * 0.5 + 0.2,
-            pulse: Math.random() * Math.PI * 2,
-            speed: 0.02 + Math.random() * 0.03
-          });
+        // 初始化画布尺寸
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            createParticles();
         }
 
-        window.addEventListener('mousemove', function(e) {
-          mouse.x = e.clientX;
-          mouse.y = e.clientY;
-        });
-        window.addEventListener('touchmove', function(e) {
-          const t = e.touches[0];
-          if (t) { mouse.x = t.clientX; mouse.y = t.clientY; }
-        }, { passive: true });
-
-        // 获取主色
-        function getPrimary() {
-          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-          return isDark ? '#00d4ff' : '#0066cc';
-        }
-
-        let time = 0;
-
-        function draw() {
-          time++;
-          ctx.clearRect(0, 0, w, h);
-
-          const primary = getPrimary();
-
-          particles.forEach(function(p) {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.pulse += p.speed;
-            if (p.x < 0 || p.x > w) p.vx *= -1;
-            if (p.y < 0 || p.y > h) p.vy *= -1;
-
-            const dx = p.x - (mouse.x || w/2);
-            const dy = p.y - (mouse.y || h/2);
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 180) {
-              const force = (180 - dist) / 180;
-              p.x += dx * force * 0.025;
-              p.y += dy * force * 0.025;
+        // 粒子对象类
+        class Particle {
+            constructor() {
+                // 随机位置
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                
+                // 粒子大小：模拟光尘，有大有小
+                this.size = Math.random() * 4 + 1; 
+                this.baseOpacity = Math.random() * 0.6 + 0.2;
+                
+                // 漂浮速度，极其缓慢
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                
+                // 呼吸闪烁参数
+                this.twinkleSpeed = Math.random() * 0.02 + 0.01;
+                this.phase = Math.random() * Math.PI * 2;
             }
 
-            const pulseAlpha = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * (1 + 0.2 * Math.sin(p.pulse)), 0, Math.PI * 2);
-            ctx.fillStyle = primary;
-            ctx.globalAlpha = pulseAlpha * 0.6;
-            ctx.shadowColor = primary;
-            ctx.shadowBlur = 15;
-            ctx.fill();
-            ctx.shadowBlur = 0;
+            // 更新粒子位置和透明度
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
 
-            // 核心亮点
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * 0.3, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.globalAlpha = pulseAlpha * 0.3;
-            ctx.fill();
-            ctx.globalAlpha = 1;
-          });
+                // 碰到边缘反弹
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
 
-          // 连接线 - 光感蛛网效果（无蜘蛛元素，纯科技光网）
-          for (let i = 0; i < particles.length; i++) {
-            for (let j = i + 1; j < particles.length; j++) {
-              const dx = particles[i].x - particles[j].x;
-              const dy = particles[i].y - particles[j].y;
-              const dist = Math.sqrt(dx*dx + dy*dy);
-              if (dist < 140) {
-                const alpha = (1 - dist / 140) * 0.15;
+                this.phase += this.twinkleSpeed;
+                // 透明度在基础透明度上下浮动，产生闪烁感
+                return this.baseOpacity * (0.6 + 0.4 * Math.sin(this.phase));
+            }
+
+            // 绘制具有光感的粒子
+            draw(currentOpacity) {
+                // 设定光感颜色：暖金/橘白（完美适配两张图的色调）
+                const colorR = 255;
+                const colorG = 200 + Math.random() * 40; 
+                const colorB = 120 + Math.random() * 40;
+
                 ctx.beginPath();
-                ctx.moveTo(particles[i].x, particles[i].y);
-                ctx.lineTo(particles[j].x, particles[j].y);
-                ctx.strokeStyle = primary;
-                ctx.globalAlpha = alpha;
-                ctx.lineWidth = 0.5 + (1 - dist / 140) * 0.8;
-                ctx.shadowColor = primary;
-                ctx.shadowBlur = 8;
-                ctx.stroke();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                
+                // 1. 绘制粒子本体（柔和）
+                ctx.fillStyle = `rgba(${colorR}, ${colorG}, ${colorB}, ${currentOpacity * 0.8})`;
+                ctx.fill();
+
+                // 2. 增加高光发光晕，模拟镜头光晕效果
+                ctx.shadowColor = `rgba(255, 180, 100, ${currentOpacity * 0.4})`;
+                ctx.shadowBlur = 30; 
+                
+                // 再次绘制一次，利用阴影产生发光
+                ctx.fill();
+                
+                // 重置阴影，避免影响到下一个粒子的绘制
                 ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1;
-              }
             }
-          }
-
-          // 光晕环
-          if (mouse.x && mouse.y) {
-            const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 200);
-            grad.addColorStop(0, primary + '15');
-            grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-          }
-
-          // 角落科技光晕
-          const cornerGrad = ctx.createRadialGradient(w * 0.85, h * 0.15, 0, w * 0.85, h * 0.15, 300);
-          cornerGrad.addColorStop(0, primary + '08');
-          cornerGrad.addColorStop(1, 'transparent');
-          ctx.fillStyle = cornerGrad;
-          ctx.fillRect(0, 0, w, h);
-
-          requestAnimationFrame(draw);
         }
-        draw();
-      }
 
-      // ===== 启动 =====
-      function init() {
-        renderHighlights();
-        renderWork();
-        renderCampus();
-        renderProjects();
-        renderSkills();
-        renderEducation();
-        initAvatar();
-        initPhoto();
-        initCustom();
-        initTheme();
-        initCopy();
-        initBack();
-        initSmooth();
-        initLightBg();
-      }
+        // 初始化所有粒子
+        function createParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
-      }
-    })();
-  </script>
+        // 粒子之间的连线（生成光网效果）
+        function connectParticles() {
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    let dx = particles[a].x - particles[b].x;
+                    let dy = particles[a].y - particles[b].y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // 距离小于120像素时连线
+                    if (distance < 120) {
+                        let opacityValue = 1 - (distance / 120);
+                        // 连线也是金色的
+                        ctx.strokeStyle = `rgba(255, 200, 100, ${opacityValue * 0.15})`;
+                        ctx.lineWidth = 1.2;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // 动画主循环（每秒60帧）
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < particles.length; i++) {
+                let currentOpacity = particles[i].update();
+                particles[i].draw(currentOpacity);
+            }
+
+            connectParticles(); // 绘制光网
+            requestAnimationFrame(animate); // 循环调用
+        }
+
+        // 监听浏览器窗口大小变化，自适应
+        window.addEventListener('resize', () => {
+            initCanvas();
+        });
+
+        // 启动一切
+        initCanvas();
+        animate();
+
+
+        // ========================================
+        // 新增：一键下载本网页功能
+        // ========================================
+        document.getElementById('download-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 获取当前完整的 HTML 结构
+            let currentHTML = document.documentElement.outerHTML;
+            
+            // 补全文档类型声明
+            let fullHTML = '<!DOCTYPE html>\n' + currentHTML;
+
+            // 创建 Blob 对象
+            const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            // 触发下载
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '光影粒子网页.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
 </body>
 </html>
-```
